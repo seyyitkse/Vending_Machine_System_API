@@ -1,4 +1,4 @@
-namespace Vending.API
+namespace Vending.ApiLayer
 {
     public class WeatherForecast
     {

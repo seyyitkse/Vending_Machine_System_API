@@ -1,0 +1,6 @@
+@Vending.ApiLayer_HostAddress = http://localhost:44395
+
+GET {{Vending.ApiLayer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
