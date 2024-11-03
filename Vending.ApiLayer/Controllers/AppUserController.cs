@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging; // ILogger için gerekli using
+using Serilog.Context;
 using Vending.DtoLayer.Dtos.AppUserDto;
 using Vending.EntityLayer.Concrete;
 
@@ -21,17 +23,35 @@ namespace Vending.ApiLayer.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetApplicationUsers()
+        public async Task<IActionResult> GetApplicationUsers()
         {
-            _logger.LogInformation("Tüm kullanıcılar alınıyor."); // Log ekleme
-            var users = _userManager.Users.ToList();
+            using (LogContext.PushProperty("LogType", "APPUSERROLE-LIST"))
+            {
+                _logger.LogInformation("Tüm kullanıcılar alınıyor.");
+            }
+
+            var users = await _userManager.Users
+                .Select(user => new
+                {
+                    user.Id,
+                    user.FullName,
+                    user.Email,
+                    user.PhoneNumber,
+                    Role = _userManager.GetRolesAsync(user).Result.FirstOrDefault()
+                })
+                .ToListAsync();
+
             return Ok(users);
         }
+
 
         [HttpGet("getUserRoles")]
         public async Task<IActionResult> GetUsers()
         {
-            _logger.LogInformation("Kullanıcı rolleri alınıyor."); // Log ekleme
+            using (LogContext.PushProperty("LogType", "APPUSERROLE-LIST"))
+            {
+                _logger.LogInformation("Kullanıcı rolleri alınıyor.");
+            }
             var users = await _userManager.Users.ToListAsync();
             var userRoles = new List<ResultAppUserRolesDto>();
 
@@ -57,8 +77,11 @@ namespace Vending.ApiLayer.Controllers
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                _logger.LogWarning($"Kullanıcı bulunamadı. Kullanıcı ID: {userId}"); // Log ekleme
-                return NotFound();
+                using (LogContext.PushProperty("LogType", "APPUSERROLE-FAIL"))
+                {
+                    _logger.LogWarning($"Kullanıcı bulunamadı. Kullanıcı: {user.UserName}");
+                }
+                return NotFound($"Kullanıcı bulunamadı. Kullanıcı: {user.UserName}");
             }
 
             var currentRoles = await _userManager.GetRolesAsync(user);
@@ -72,7 +95,10 @@ namespace Vending.ApiLayer.Controllers
                 var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
                 if (!addResult.Succeeded)
                 {
-                    _logger.LogError("Rolleri eklerken hata oluştu: {@Errors}", addResult.Errors); // Log ekleme
+                    using (LogContext.PushProperty("LogType", "APPUSERROLE-FAIL"))
+                    {
+                        _logger.LogWarning("Rolleri eklerken hata oluştu: {@Errors}", addResult.Errors);
+                    }
                     return BadRequest("Rolleri güncelleme başarısız.");
                 }
 
@@ -84,21 +110,31 @@ namespace Vending.ApiLayer.Controllers
                 var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
                 if (!removeResult.Succeeded)
                 {
-                    _logger.LogError("Rolleri çıkarırken hata oluştu: {@Errors}", removeResult.Errors); // Log ekleme
+                    using (LogContext.PushProperty("LogType", "APPUSERROLE-FAIL"))
+                    {
+                        _logger.LogWarning("Rolleri çıkarırken hata oluştu: {@Errors}", removeResult.Errors);
+                    }
                     return BadRequest("Rolleri güncelleme başarısız.");
                 }
-
-                _logger.LogInformation("Kullanıcıdan çıkarılan roller: {Roles}", string.Join(", ", rolesToRemove)); // Log ekleme
+                using (LogContext.PushProperty("LogType", "APPUSERROLE-SUCCESS"))
+                {
+                    _logger.LogInformation("Kullanıcıdan çıkarılan roller: {Roles}", string.Join(", ", rolesToRemove));
+                }
             }
-
-            _logger.LogInformation("Kullanıcı rolleri başarıyla güncellendi."); // Log ekleme
+            using (LogContext.PushProperty("LogType", "APPUSERROLE-SUCCESS"))
+            {
+                _logger.LogInformation("Kullanıcı rolleri başarıyla güncellendi.");
+            }
             return Ok();
         }
 
         [HttpGet("Customer/{departmentId}")]
-        public async Task<IActionResult> GetStudentUsersByDepartment(int departmentId)
+        public async Task<IActionResult> GetCustomerUsersByDepartment(int departmentId)
         {
-            _logger.LogInformation($"Müşteri kullanıcıları alınıyor. Departman ID: {departmentId}"); // Log ekleme
+            using (LogContext.PushProperty("LogType", "APPUSERROLE-SUCCESS"))
+            {
+                _logger.LogInformation($"Müşteri kullanıcıları alınıyor. Departman ID: {departmentId}");
+            }
             var customerUsers = await _userManager.GetUsersInRoleAsync("Customer");
             var customerUsersInDepartment = customerUsers.Where(u => u.DepartmentID == departmentId).ToList();
 
@@ -106,13 +142,77 @@ namespace Vending.ApiLayer.Controllers
         }
 
         [HttpGet("Admin/{departmentId}")]
-        public async Task<IActionResult> GetTeacherUsersByDepartment(int departmentId)
+        public async Task<IActionResult> GetAdminUsersByDepartment(int departmentId)
         {
-            _logger.LogInformation($"Admin kullanıcıları alınıyor. Departman ID: {departmentId}"); // Log ekleme
+            using (LogContext.PushProperty("LogType", "APPUSERROLE-SUCCESS"))
+            {
+                _logger.LogInformation($"Admin kullanıcıları alınıyor. Departman ID: {departmentId}"); // Log ekleme
+            }
             var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
             var adminUsersInDepartment = adminUsers.Where(u => u.DepartmentID == departmentId).ToList();
 
             return Ok(adminUsersInDepartment);
         }
+        [HttpGet("getCustomerList")]
+        public async Task<IActionResult> GetCustomerUsersList()
+        {
+            using (LogContext.PushProperty("LogType", "APPUSERLIST-CUSTOMER"))
+            {
+                _logger.LogInformation("Müşteri kullanıcıları listeleniyor.");
+            }
+
+            var allUsers = await _userManager.Users.Include(u => u.Department).ToListAsync();
+            var customerUsers = new List<ResultCustomerUserDto>();
+
+            foreach (var user in allUsers)
+            {
+                if (await _userManager.IsInRoleAsync(user, "Customer"))
+                {
+                    customerUsers.Add(new ResultCustomerUserDto
+                    {
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        Email = user.Email,
+                        PhoneNumber = user.PhoneNumber,
+                        DepartmentName = user.Department != null ? user.Department.Name : "No Department"
+                    });
+                }
+            }
+
+            return Ok(customerUsers);
+        }
+
+
+
+        [HttpGet("getAdminUsers")]
+        public async Task<IActionResult> GetAdminUsersList()
+        {
+            using (LogContext.PushProperty("LogType", "APPUSERLIST-ADMIN"))
+            {
+                _logger.LogInformation("Admin kullanıcıları listeleniyor."); // Log ekleme
+            }
+
+            var allUsers = await _userManager.Users.Include(u => u.Department).ToListAsync();
+            var adminUsers = new List<ResultAdminUserDto>();
+
+            foreach (var user in allUsers)
+            {
+                if (await _userManager.IsInRoleAsync(user, "Admin"))
+                {
+                    adminUsers.Add(new ResultAdminUserDto
+                    {
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        Email = user.Email,
+                        PhoneNumber = user.PhoneNumber,
+                        DepartmentName = user.Department != null ? user.Department.Name : "Kullanıcının departmanı yok!"
+                    });
+                }
+            }
+
+            return Ok(adminUsers);
+        }
+
+
     }
 }
