@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging; // ILogger için gerekli using
 using Serilog.Context;
+using Vending.DataAccessLayer.Concrete;
 using Vending.DtoLayer.Dtos.AppUserDto;
 using Vending.EntityLayer.Concrete;
 
@@ -15,11 +14,13 @@ namespace Vending.ApiLayer.Controllers
     {
         private readonly UserManager<AppUser> _userManager;
         private readonly ILogger<AppUserController> _logger; // ILogger bağımlılığı
+        private readonly VendingContext _context;
 
-        public AppUserController(UserManager<AppUser> userManager, ILogger<AppUserController> logger)
+        public AppUserController(UserManager<AppUser> userManager, ILogger<AppUserController> logger, VendingContext context)
         {
             _userManager = userManager;
-            _logger = logger; // ILogger bağımlılığının atanması
+            _logger = logger;
+            _context = context;
         }
 
         [HttpGet]
@@ -44,9 +45,8 @@ namespace Vending.ApiLayer.Controllers
             return Ok(users);
         }
 
-
         [HttpGet("getUserRoles")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUserRoles()
         {
             using (LogContext.PushProperty("LogType", "APPUSERROLE-LIST"))
             {
@@ -128,6 +128,23 @@ namespace Vending.ApiLayer.Controllers
             return Ok();
         }
 
+        [HttpGet("getUserRoles/{userId}")]
+        public async Task<IActionResult> GetUserRolesByUserId(string userId)
+        {
+            _logger.LogInformation("Kullanıcı rolleri getiriliyor: {UserId}", userId);
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Kullanıcı bulunamadı: {UserId}", userId);
+                return NotFound(new { Message = "Kullanıcı bulunamadı." });
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            _logger.LogInformation("Kullanıcı rolleri başarıyla getirildi: {UserId}", userId);
+            return Ok(roles);
+        }
+
         [HttpGet("Customer/{departmentId}")]
         public async Task<IActionResult> GetCustomerUsersByDepartment(int departmentId)
         {
@@ -182,6 +199,66 @@ namespace Vending.ApiLayer.Controllers
             return Ok(customerUsers);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUserById(string id)
+        {
+            _logger.LogInformation("Kullanıcı bilgileri getiriliyor: {UserId}", id);
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("Kullanıcı bulunamadı: {UserId}", id);
+                return NotFound(new { Message = "Kullanıcı bulunamadı." });
+            }
+
+            var department = await _context.Departments.FindAsync(user.DepartmentID);
+
+            var userDto = new
+            {
+                user.Email,
+                user.FullName,
+                DepartmentId = user.DepartmentID,
+                DepartmentName = department?.Name
+            };
+
+            _logger.LogInformation("Kullanıcı bilgileri başarıyla getirildi: {UserId}", id);
+            return Ok(userDto);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateAppUserDto model)
+        {
+            _logger.LogInformation("Kullanıcı bilgileri güncelleniyor: {UserId}", id);
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("Kullanıcı bulunamadı: {UserId}", id);
+                return NotFound(new { Message = "Kullanıcı bulunamadı." });
+            }
+
+            user.FullName = model.FullName;
+
+            // Find the department by name
+            var department = await _context.Departments.FirstOrDefaultAsync(d => d.Name == model.DepartmentName);
+            if (department == null)
+            {
+                _logger.LogWarning("Departman bulunamadı: {DepartmentName}", model.DepartmentName);
+                return NotFound(new { Message = "Departman bulunamadı." });
+            }
+
+            user.DepartmentID = department.DepartmentID;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                _logger.LogError("Kullanıcı bilgileri güncellenemedi: {UserId}", id);
+                return BadRequest(new { Message = "Kullanıcı bilgileri güncellenemedi." });
+            }
+
+            _logger.LogInformation("Kullanıcı bilgileri başarıyla güncellendi: {UserId}", id);
+            return Ok(new { Message = "Kullanıcı bilgileri başarıyla güncellendi." });
+        }
 
 
         [HttpGet("getAdminUsers")]
