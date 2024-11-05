@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog.Context;
 using System.IdentityModel.Tokens.Jwt;
@@ -40,8 +41,16 @@ namespace Vending.ApiLayer.Controllers
 
             string name = $"{user.FirstName} {user.LastName}";
             int userID = user.Id;
-            int departmanId = user.DepartmentID;
-            Department department = _context.Departments.FirstOrDefault(x => x.DepartmentID == departmanId);
+
+            // DepartmentID nullable olduğu için kontrol yapıyoruz
+            int? departmanId = user.DepartmentID;
+            Department department = null;
+
+            if (departmanId.HasValue)
+            {
+                department = _context.Departments.FirstOrDefault(x => x.DepartmentID == departmanId.Value);
+            }
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["AuthSettings:Token"]));
 
             var claims = new List<Claim>
@@ -49,7 +58,7 @@ namespace Vending.ApiLayer.Controllers
                 new Claim("Mail", user.Email),
                 new Claim("Username", user.UserName),
                 new Claim("Name", name),
-                new Claim("Department", department.Name),
+                new Claim("Department", department?.Name ?? "No Department"), // Null ise "No Department" atanır
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("UserID", userID.ToString())
             };
@@ -63,73 +72,90 @@ namespace Vending.ApiLayer.Controllers
                 issuer: _configuration["AuthSettings:Issuer"],
                 audience: _configuration["AuthSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(30),
+                expires: DateTime.Now.AddMinutes(10),
                 notBefore: DateTime.Now,
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
 
-            // Kullanıcı için token oluşturuluyor
-            //_logger.LogInformation("Kullanıcı için JWT token oluşturuldu: {Email}",user.Email);
-            //using (LogContext.PushProperty("LogType", "TOKEN"))
-            //{
-            //    _logger.LogInformation("Kullanıcı için JWT token oluşturuldu: {Email}", user.Email);
-            //}
+            // Kullanıcı için token oluşturuluyor ve log kaydı yapılıyor
             using (LogContext.PushProperty("LogType", "TOKEN"))
             {
                 _logger.LogInformation("Kullanıcı için JWT token oluşturuldu: {Email}", user.Email);
             }
+
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         [HttpPost("RegisterCustomer")]
-        public async Task<IActionResult> RegisterEmployeeAsync([FromBody] CreateAppUserDto model)
+        public async Task<IActionResult> RegisterCustomerAsync([FromBody] CreateAppUserDto model)
         {
             if (ModelState.IsValid)
             {
+                // Find the department by name
+                var department = await _context.Departments.FirstOrDefaultAsync(d => d.Name == model.DepartmentName);
+                if (department == null)
+                {
+                    using (LogContext.PushProperty("LogType", "REGISTERCUSTOMER-FAIL"))
+                    {
+                        _logger.LogWarning("Departman bulunamadı: {DepartmentName}", model.DepartmentName);
+                    }
+                    return BadRequest("Departman bulunamadı.");
+                }
+
+                model.DepartmentID = department.DepartmentID; // Set the department ID
+
                 var result = await _applicationUserService.RegisterUserAsync(model);
                 if (result.IsSuccess)
                 {
                     var user = await _userManager.FindByEmailAsync(model.Mail);
                     await _userManager.AddToRoleAsync(user, "Customer");
-                    // Yeni kullanıcı kaydedildiğinde log kaydı
                     using (LogContext.PushProperty("LogType", "REGISTERCUSTOMER"))
                     {
                         _logger.LogInformation("Yeni kullanıcı kaydedildi: {Email}", model.Mail);
                     }
-
                     return Ok(result);
                 }
-                // Kayıt başarısız olduğunda log kaydı
-                //_logger.LogWarning("Kullanıcı kaydı başarısız.");
+
                 using (LogContext.PushProperty("LogType", "REGISTERCUSTOMER-FAIL"))
                 {
-                    _logger.LogWarning("Kullanıcı {Email} kaydı başarısız.",model.Mail);
+                    _logger.LogWarning("Kullanıcı {Email} kaydı başarısız.", model.Mail);
                 }
                 return BadRequest(result);
             }
-            return Ok();
+            return BadRequest("Bazı değerler girilmedi!");
         }
+
 
         [HttpPost("RegisterAdmin")]
         public async Task<IActionResult> RegisterAdminAsync([FromBody] CreateAppUserDto model)
         {
             if (ModelState.IsValid)
             {
+                // Find the department by name
+                var department = await _context.Departments.FirstOrDefaultAsync(d => d.Name == model.DepartmentName);
+                if (department == null)
+                {
+                    using (LogContext.PushProperty("LogType", "REGISTERADMIN-FAIL"))
+                    {
+                        _logger.LogWarning("Departman bulunamadı: {DepartmentName}", model.DepartmentName);
+                    }
+                    return BadRequest("Departman bulunamadı.");
+                }
+
+                model.DepartmentID = department.DepartmentID; // Set the department ID
+
                 var result = await _applicationUserService.RegisterUserAsync(model);
                 if (result.IsSuccess)
                 {
                     var user = await _userManager.FindByEmailAsync(model.Mail);
                     await _userManager.AddToRoleAsync(user, "Admin");
-                    // Yeni admin kaydedildiğinde log kaydı
-                    //_logger.LogInformation("Yeni admin kaydedildi: {Email}",user.Email);
                     using (LogContext.PushProperty("LogType", "REGISTERADMIN"))
                     {
                         _logger.LogInformation("Yeni admin {Email} kaydedildi.", model.Mail);
                     }
                     return Ok(result);
                 }
-                // Admin kaydı başarısız olduğunda log kaydı
-                //_logger.LogWarning("Admin kaydı başarısız.");
+
                 using (LogContext.PushProperty("LogType", "REGISTERADMIN-FAIL"))
                 {
                     _logger.LogWarning("Admin {Email} kaydı başarısız.", model.Mail);
@@ -138,6 +164,7 @@ namespace Vending.ApiLayer.Controllers
             }
             return BadRequest("Bazı değerler girilmedi!");
         }
+
 
 
         [HttpPost("Login")]
