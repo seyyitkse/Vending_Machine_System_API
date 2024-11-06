@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Serilog.Context;
 using Vending.BusinessLayer.Abstract;
 using Vending.DataAccessLayer.Concrete;
+using Vending.DtoLayer.Dtos.DepartmentsDto;
 using Vending.EntityLayer.Concrete;
 
 namespace Vending.ApiLayer.Controllers
@@ -60,7 +61,7 @@ namespace Vending.ApiLayer.Controllers
         {
             if (id != department.DepartmentID)
             {
-                using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE"))
+                using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE-FAIL"))
                 {
                     _logger.LogWarning("Departman ID uyuşmazlığı. Güncelleme başarısız.");
                 }
@@ -71,7 +72,7 @@ namespace Vending.ApiLayer.Controllers
             var oldDepartment = await _context.Departments.AsNoTracking().FirstOrDefaultAsync(d => d.DepartmentID == id);
             if (oldDepartment == null)
             {
-                using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE"))
+                using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE-FAIL"))
                 {
                     _logger.LogWarning("Güncellenecek departman bulunamadı.");
                 }
@@ -93,7 +94,7 @@ namespace Vending.ApiLayer.Controllers
             {
                 if (!DepartmentExists(id))
                 {
-                    using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE"))
+                    using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE-FAIL"))
                     {
                         _logger.LogWarning("Departman güncellenirken ID {id} bulunamadı.", id);
                     }
@@ -101,7 +102,7 @@ namespace Vending.ApiLayer.Controllers
                 }
                 else
                 {
-                    using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE"))
+                    using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE-FAIL"))
                     {
                         _logger.LogError("{oldDepartmentName} isimli departman güncellenirken bir hata oluştu.", oldDepartmentName);
                     }
@@ -109,7 +110,7 @@ namespace Vending.ApiLayer.Controllers
                 }
             }
 
-            using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE"))
+            using (LogContext.PushProperty("LogType", "DEPARTMENTUPDATE-SUCCESS"))
             {
                 _logger.LogInformation("{oldDepartmentName} isimli departman, {newDepartmentName} olarak başarıyla güncellendi.", oldDepartmentName, newDepartmentName);
             }
@@ -118,71 +119,112 @@ namespace Vending.ApiLayer.Controllers
         }
 
         // POST: api/Departments
+        //[HttpPost]
+        //public async Task<ActionResult<Department>> PostDepartment(Department department)
+        //{
+        //    // Check if a department with the same name already exists
+        //    var existingDepartment = await _context.Departments
+        //        .FirstOrDefaultAsync(d => d.Name == department.Name);
+
+        //    if (existingDepartment != null)
+        //    {
+        //        using (LogContext.PushProperty("LogType", "DEPARTMENTCREATE"))
+        //        {
+        //            _logger.LogWarning("{Name} isimli departman zaten mevcut. Oluşturma başarısız.", department.Name);
+        //        }
+
+        //        return BadRequest(new { message = "A department with the same name already exists." });
+        //    }
+
+        //    // Handle the app users if they exist
+        //    if (department.AppUsers != null && department.AppUsers.Any())
+        //    {
+        //        foreach (var user in department.AppUsers)
+        //        {
+        //            user.DepartmentID = department.DepartmentID;
+        //            _context.Entry(user).State = user.Id == 0 ? EntityState.Added : EntityState.Modified;
+        //        }
+        //    }
+
+        //    // Add the new department
+        //    _context.Departments.Add(department);
+        //    await _context.SaveChangesAsync();
+
+        //    using (LogContext.PushProperty("LogType", "DEPARTMENTCREATE"))
+        //    {
+        //        _logger.LogInformation("{Name} isimli departman başarıyla oluşturuldu.", department.Name);
+        //    }
+
+        //    return CreatedAtAction("GetDepartment", new { id = department.DepartmentID }, department);
+        //}
+
+        // DELETE: api/Departments/5
+
         [HttpPost]
-        public async Task<ActionResult<Department>> PostDepartment(Department department)
+        public async Task<ActionResult<Department>> PostDepartment(CreateDepartmentDto departmentDto)
         {
             // Check if a department with the same name already exists
             var existingDepartment = await _context.Departments
-                .FirstOrDefaultAsync(d => d.Name == department.Name);
+                .FirstOrDefaultAsync(d => d.Name == departmentDto.Name);
 
             if (existingDepartment != null)
             {
-                using (LogContext.PushProperty("LogType", "DEPARTMENTCREATE"))
+                using (LogContext.PushProperty("LogType", "DEPARTMENTCREATE-FAIL"))
                 {
-                    _logger.LogWarning("{Name} isimli departman zaten mevcut. Oluşturma başarısız.", department.Name);
+                    _logger.LogWarning("{Name} isimli departman zaten mevcut. Oluşturma başarısız.", departmentDto.Name);
                 }
 
-                return BadRequest(new { message = "A department with the same name already exists." });
+                return BadRequest(new { message = "Bu isimli departman daha önce oluşturulmuş." });
             }
 
-            // Handle the app users if they exist
-            if (department.AppUsers != null && department.AppUsers.Any())
+            // Map CreateDepartmentDto to Department
+            var department = new Department
             {
-                foreach (var user in department.AppUsers)
-                {
-                    user.DepartmentID = department.DepartmentID;
-                    _context.Entry(user).State = user.Id == 0 ? EntityState.Added : EntityState.Modified;
-                }
-            }
+                Name = departmentDto.Name
+            };
 
             // Add the new department
             _context.Departments.Add(department);
             await _context.SaveChangesAsync();
 
-            using (LogContext.PushProperty("LogType", "DEPARTMENTCREATE"))
+            using (LogContext.PushProperty("LogType", "DEPARTMENTCREATE-SUCCESS"))
             {
                 _logger.LogInformation("{Name} isimli departman başarıyla oluşturuldu.", department.Name);
             }
 
             return CreatedAtAction("GetDepartment", new { id = department.DepartmentID }, department);
         }
-
-        // DELETE: api/Departments/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
-            var department = await _context.Departments.FindAsync(id);
+            var department = await _context.Departments.Include(d => d.AppUsers).FirstOrDefaultAsync(d => d.DepartmentID == id);
             if (department == null)
             {
-                using (LogContext.PushProperty("LogType", "DEPARTMENTDELETE"))
+                using (LogContext.PushProperty("LogType", "DEPARTMENTDELETE-FAIL"))
                 {
                     _logger.LogWarning("ID {id} olan departman bulunamadı.", id);
                 }
                 return NotFound();
             }
 
-            var departmentName = department.Name;
-            _context.Departments.Remove(department);
-            await _context.SaveChangesAsync();
-
-            using (LogContext.PushProperty("LogType", "DEPARTMENTDELETE"))
+            // Bağlantılı kullanıcıların departmanını kaldırma
+            foreach (var user in department.AppUsers)
             {
-                _logger.LogInformation("{departmentName} isimli departman silindi.", departmentName);
+                user.DepartmentID = null; // Kullanıcıların DepartmentID'sini kaldır
+            }
+
+            await _context.SaveChangesAsync(); // Önce kullanıcı güncellemelerini kaydedin
+
+            _context.Departments.Remove(department);
+            await _context.SaveChangesAsync(); // Şimdi departmanı silin
+
+            using (LogContext.PushProperty("LogType", "DEPARTMENTDELETE-SUCCESS"))
+            {
+                _logger.LogInformation("{departmentName} isimli departman silindi.", department.Name);
             }
 
             return Ok();
         }
-
         private bool DepartmentExists(int id)
         {
             return _context.Departments.Any(e => e.DepartmentID == id);
