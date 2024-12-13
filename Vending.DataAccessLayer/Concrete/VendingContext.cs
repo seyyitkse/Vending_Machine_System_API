@@ -8,7 +8,7 @@ namespace Vending.DataAccessLayer.Concrete
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("server=DESKTOP-6B43INH\\SQLEXPRESS;database=DbVending;Trusted_Connection=true;MultipleActiveResultSets=true;TrustServerCertificate=true;encrypt=false");
+            optionsBuilder.UseSqlServer("server=MSI-Bravo\\SQLEXPRESS;database=DbVending;Trusted_Connection=true;MultipleActiveResultSets=true;TrustServerCertificate=true;encrypt=false");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
