@@ -251,7 +251,7 @@ namespace Vending.DataAccessLayer.Migrations
 
                     b.HasKey("BrandId");
 
-                    b.ToTable("Brands", (string)null);
+                    b.ToTable("Brands");
                 });
 
             modelBuilder.Entity("Vending.EntityLayer.Concrete.Category", b =>
@@ -268,7 +268,7 @@ namespace Vending.DataAccessLayer.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("Vending.EntityLayer.Concrete.Department", b =>
@@ -284,7 +284,7 @@ namespace Vending.DataAccessLayer.Migrations
 
                     b.HasKey("DepartmentID");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("Vending.EntityLayer.Concrete.Product", b =>
@@ -294,6 +294,9 @@ namespace Vending.DataAccessLayer.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductId"));
+
+                    b.Property<int>("BrandId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
@@ -310,9 +313,11 @@ namespace Vending.DataAccessLayer.Migrations
 
                     b.HasKey("ProductId");
 
+                    b.HasIndex("BrandId");
+
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("Vending.EntityLayer.Concrete.TodoItem", b =>
@@ -336,7 +341,7 @@ namespace Vending.DataAccessLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TodoItems", (string)null);
+                    b.ToTable("TodoItems");
                 });
 
             modelBuilder.Entity("Vending.EntityLayer.Concrete.Vend", b =>
@@ -362,7 +367,7 @@ namespace Vending.DataAccessLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Vends", (string)null);
+                    b.ToTable("Vends");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -428,13 +433,26 @@ namespace Vending.DataAccessLayer.Migrations
 
             modelBuilder.Entity("Vending.EntityLayer.Concrete.Product", b =>
                 {
+                    b.HasOne("Vending.EntityLayer.Concrete.Brand", "Brand")
+                        .WithMany("Products")
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Vending.EntityLayer.Concrete.Category", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Brand");
+
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Vending.EntityLayer.Concrete.Brand", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Vending.EntityLayer.Concrete.Category", b =>
