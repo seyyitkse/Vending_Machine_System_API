@@ -1,0 +1,154 @@
+﻿@model InvoiceViewModel
+@* //dinktopdfte kullanıyor
+ *@<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>e-Arşiv Fatura</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f2f2f2;
+            padding: 40px;
+            color: #333;
+        }
+
+        .invoice-box {
+            max-width: 850px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.15);
+        }
+
+        .logo {
+            text-align: center;
+/*             margin-bottom: 30px;
+ */        }
+
+            .logo img {
+                height: 350px;
+            }
+
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            color: #2c3e50;
+/*             margin-bottom: 30px;
+ */        }
+
+        .info-grid {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            flex: 1 1 48%;
+            background-color: #f6f6f6;
+            padding: 15px;
+            border-left: 4px solid #2c3e50;
+        }
+
+            .info-box strong {
+                display: block;
+                margin-bottom: 8px;
+                color: #333;
+            }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        .totals {
+            margin-top: 30px;
+            float: right;
+            width: 50%;
+            background-color: #f6f6f6;
+            padding: 20px;
+            border-left: 4px solid #2c3e50;
+        }
+
+            .totals p {
+                margin: 8px 0;
+            }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 14px;
+            color: #555;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="invoice-box">
+        <div class="logo">
+            <img src="c:\users\ahmet\source\repos\seyyitkse\vending_machine_system_api\vending.entitylayer\logos\logo.png" alt="RAPIDVEND Logo" />
+        </div>
+
+        <h1>e-Arşiv Fatura</h1>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <strong>Fatura Bilgileri</strong>
+                <p>Fatura No: <strong>@Model.OrderId</strong></p>
+                <p>Tarih: <strong>@Model.OrderDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</strong></p>
+                <p>Satıcı: RAPIDVEND</p>
+                <p>Adres: Kahramanmaraş, Türkiye</p>
+            </div>
+            <div class="info-box">
+                <strong>Müşteri Bilgileri</strong>
+                <p>Ad Soyad: @Model.UserName</p>
+                <p>Satış Noktası: @Model.VendName</p>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Miktar</th>
+                    <th>Birim Fiyat</th>
+                    <th>Tutar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@Model.ProductName</td>
+                    <td>@Model.Quantity</td>
+                    <td>@Model.Price ₺</td>
+                    <td>@Model.TotalPrice ₺</td>
+                </tr>
+            </tbody>
+        </table>
+@* 
+        <div class="totals">
+            <p><strong>Toplam: @Model.TotalPrice.ToString("N2") ₺</strong></p>
+        </div> *@
+        <p style="float:right"><strong>Toplam Tutar: @Model.TotalPrice ₺</strong></p>
+        <br />
+        <br />
+        <div class="footer">
+            Bu belge 213 Sayılı Vergi Usul Kanunu hükümlerine göre elektronik ortamda düzenlenmiştir. Islak imza gerektirmez.
+        </div>
+    </div>
+</body>
+</html>
