@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Vending.DtoLayer.Dtos.AppUserDto;
 using Vending.DtoLayer.Dtos.DepartmentsDto;
+using Vending.DtoLayer.Dtos.OrderDto;
 using Vending.DtoLayer.Dtos.RoleDto;
 using Vending.DtoLayer.Dtos.TodoItemDto;
+
 using Vending.EntityLayer.Concrete;
 
 namespace Vending.ApiLayer.Mapping
@@ -21,6 +23,7 @@ namespace Vending.ApiLayer.Mapping
             CreateMap<ResultAppUserRolesDto, AppUser>().ReverseMap();
             CreateMap<ResultAdminUserDto, AppUser>().ReverseMap();
             CreateMap<ResultCustomerUserDto, AppUser>().ReverseMap();
+            CreateMap<CreateOrderDto, AppUser>().ReverseMap();
         }
     }
 }

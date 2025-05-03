@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Serilog.Context;
 using Vending.DataAccessLayer.Concrete;
 using Vending.DtoLayer.Dtos.AppUserDto;
@@ -16,13 +17,19 @@ namespace Vending.ApiLayer.Controllers
         private readonly ILogger<AppUserController> _logger; // ILogger bağımlılığı
         private readonly VendingContext _context;
 
-        public AppUserController(UserManager<AppUser> userManager, ILogger<AppUserController> logger, VendingContext context)
+        public AppUserController(UserManager<AppUser> userManager, ILogger<AppUserController> logger, VendingContext context, IMemoryCache cache)
         {
             _userManager = userManager;
             _logger = logger;
             _context = context;
+            Cache = cache;
         }
 
+        public IMemoryCache Cache { get; }
+
+        /// <summary>
+        /// Tüm kullanıcıları ve rollerini getirir.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetApplicationUsers()
         {
@@ -34,17 +41,20 @@ namespace Vending.ApiLayer.Controllers
             var users = await _userManager.Users
                 .Select(user => new
                 {
-                    user.Id,
-                    user.FullName,
-                    user.Email,
-                    user.PhoneNumber,
-                    Role = _userManager.GetRolesAsync(user).Result.FirstOrDefault()
+                    Id = user.UserCode,
+                    FullName = user.FullName ?? null, // Ensure null if missing
+                    Email = user.Email ?? null, // Ensure null if missing
+                    PhoneNumber = user.PhoneNumber ?? null, // Ensure null if missing
+                    Role = _userManager.GetRolesAsync(user).Result.FirstOrDefault() ?? null // Ensure null if no role
                 })
                 .ToListAsync();
 
             return Ok(users);
         }
 
+        /// <summary>
+        /// Tüm kullanıcıların rollerini getirir.
+        /// </summary>
         [HttpGet("getUserRoles")]
         public async Task<IActionResult> GetUserRoles()
         {
@@ -70,6 +80,11 @@ namespace Vending.ApiLayer.Controllers
             return Ok(userRoles);
         }
 
+        /// <summary>
+        /// Belirtilen kullanıcıya roller ekler veya çıkarır.
+        /// </summary>
+        /// <param name="userId">Kullanıcı ID'si</param>
+        /// <param name="request">Güncellenecek roller</param>
         [HttpPost("getUserRoles/{userId}/roles")]
         public async Task<IActionResult> UpdateUserRoles(string userId, [FromBody] UpdateAppUserRoles request)
         {
@@ -128,6 +143,10 @@ namespace Vending.ApiLayer.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Belirtilen kullanıcı ID'sine göre kullanıcı rollerini getirir.
+        /// </summary>
+        /// <param name="userId">Kullanıcı ID'si</param>
         [HttpGet("getUserRoles/{userId}")]
         public async Task<IActionResult> GetUserRolesByUserId(string userId)
         {
@@ -145,6 +164,10 @@ namespace Vending.ApiLayer.Controllers
             return Ok(roles);
         }
 
+        /// <summary>
+        /// Belirtilen departmandaki müşteri kullanıcılarını getirir.
+        /// </summary>
+        /// <param name="departmentId">Departman ID'si</param>
         [HttpGet("Customer/{departmentId}")]
         public async Task<IActionResult> GetCustomerUsersByDepartment(int departmentId)
         {
@@ -158,6 +181,10 @@ namespace Vending.ApiLayer.Controllers
             return Ok(customerUsersInDepartment);
         }
 
+        /// <summary>
+        /// Belirtilen departmandaki admin kullanıcılarını getirir.
+        /// </summary>
+        /// <param name="departmentId">Departman ID'si</param>
         [HttpGet("Admin/{departmentId}")]
         public async Task<IActionResult> GetAdminUsersByDepartment(int departmentId)
         {
@@ -170,6 +197,10 @@ namespace Vending.ApiLayer.Controllers
 
             return Ok(adminUsersInDepartment);
         }
+
+        /// <summary>
+        /// Tüm müşteri kullanıcılarını listeler.
+        /// </summary>
         [HttpGet("getCustomerList")]
         public async Task<IActionResult> GetCustomerUsersList()
         {
@@ -199,6 +230,10 @@ namespace Vending.ApiLayer.Controllers
             return Ok(customerUsers);
         }
 
+        /// <summary>
+        /// Belirtilen kullanıcı ID'sine göre kullanıcı bilgilerini getirir.
+        /// </summary>
+        /// <param name="id">Kullanıcı ID'si</param>
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUserById(string id)
         {
@@ -225,6 +260,11 @@ namespace Vending.ApiLayer.Controllers
             return Ok(userDto);
         }
 
+        /// <summary>
+        /// Belirtilen kullanıcıyı günceller.
+        /// </summary>
+        /// <param name="id">Kullanıcı ID'si</param>
+        /// <param name="model">Güncellenecek kullanıcı bilgileri</param>
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateAppUserDto model)
         {
@@ -260,7 +300,9 @@ namespace Vending.ApiLayer.Controllers
             return Ok(new { Message = "Kullanıcı bilgileri başarıyla güncellendi." });
         }
 
-
+        /// <summary>
+        /// Tüm admin kullanıcılarını listeler.
+        /// </summary>
         [HttpGet("getAdminUsers")]
         public async Task<IActionResult> GetAdminUsersList()
         {
@@ -286,10 +328,115 @@ namespace Vending.ApiLayer.Controllers
                     });
                 }
             }
-
             return Ok(adminUsers);
         }
 
+        ///// <summary>
+        ///// Kullanıcıyı kontrol eder ve bakiye bilgilerini getirir.
+        ///// </summary>
+        ///// <param name="usercode">Kullanıcı kodu</param>
+        //[HttpGet("checkUserAndGetBalance/{usercode}")]
+        //public async Task<IActionResult> CheckUserAndGetBalance(string usercode)
+        //{
+        //    _logger.LogInformation("Kullanıcı kontrol ediliyor ve bakiye bilgisi alınıyor: {UserCode}", usercode);
 
+        //    // Rate limit kontrolü (örnek: 5 saniyede bir istek)
+        //    if (!Request.Headers.TryGetValue("X-Client-ID", out var clientId))
+        //    {
+        //        _logger.LogWarning("Rate limit için X-Client-ID başlığı eksik.");
+        //        return BadRequest(new { Message = "Rate limit için X-Client-ID başlığı gereklidir." });
+        //    }
+
+        //    var cacheKey = $"RateLimit_{clientId}";
+        //    if (_context.Cache.TryGetValue(cacheKey, out _))
+        //    {
+        //        _logger.LogWarning("Rate limit aşıldı: {ClientId}", clientId);
+        //        return StatusCode(429, new { Message = "Çok fazla istek. Lütfen daha sonra tekrar deneyin." });
+        //    }
+
+        //    // Rate limit için cache'e ekle (25 saniye süreyle)
+        //    _context.Cache.Set(cacheKey, true, TimeSpan.FromSeconds(25));
+
+        //    // usercode'u long'a dönüştür
+        //    if (!long.TryParse(usercode, out var usercodeAsLong))
+        //    {
+        //        _logger.LogWarning("Geçersiz usercode formatı: {UserCode}", usercode);
+        //        return BadRequest(new { Exists = false, Message = "Geçersiz usercode formatı." });
+        //    }
+
+        //    try
+        //    {
+        //        // Kullanıcıyı usercode ile bul
+        //        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.UserCode == usercodeAsLong);
+        //        if (user == null)
+        //        {
+        //            _logger.LogWarning("Kullanıcı bulunamadı: {UserCode}", usercode);
+        //            return NotFound(new { Exists = false, Message = "Kullanıcı bulunamadı." });
+        //        }
+
+        //        // Kullanıcının bilgileri
+        //        var balance = user.CurrentBalance;
+        //        var fullName = user.FullName ?? $"{user.FirstName} {user.LastName}".Trim();
+
+        //        _logger.LogInformation("Kullanıcı bulundu ve bakiye bilgisi alındı: {UserCode}, Balance: {Balance}, FullName: {FullName}", usercode, balance, fullName);
+        //        return Ok(new
+        //        {
+        //            Exists = true,
+        //            UserCode = usercode,
+        //            FullName = fullName,
+        //            Balance = balance
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Kullanıcı kontrol edilirken bir hata oluştu: {UserCode}", usercode);
+        //        return StatusCode(500, new { Exists = false, Message = "Bir hata oluştu. Lütfen daha sonra tekrar deneyin." });
+        //    }
+        //}
+        /// <summary>
+        /// Kullanıcıyı kontrol eder ve bakiye bilgilerini getirir.
+        /// </summary>
+        /// <param name="usercode">Kullanıcı kodu</param>
+        [HttpGet("checkUserAndGetBalance/{usercode}")]
+        public async Task<IActionResult> CheckUserAndGetBalance(string usercode)
+        {
+            _logger.LogInformation("Kullanıcı kontrol ediliyor ve bakiye bilgisi alınıyor: {UserCode}", usercode);
+
+            // usercode'u long'a dönüştür
+            if (!long.TryParse(usercode, out var usercodeAsLong))
+            {
+                _logger.LogWarning("Geçersiz usercode formatı: {UserCode}", usercode);
+                return BadRequest(new { Exists = false, Message = "Geçersiz kullanıcı kodu formatı." });
+            }
+
+            try
+            {
+                // Kullanıcıyı usercode ile bul
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.UserCode == usercodeAsLong);
+                if (user == null)
+                {
+                    _logger.LogWarning("Kullanıcı bulunamadı: {UserCode}", usercode);
+                    return Ok(new { Exists = false, Message = "Kullanıcı bulunamadı." });
+                }
+
+                // Kullanıcının bilgileri
+                var balance = user.CurrentBalance;
+                var fullName = user.FullName ?? $"{user.FirstName} {user.LastName}".Trim();
+
+                _logger.LogInformation("Kullanıcı bulundu ve bakiye bilgisi alındı: {UserCode}, Balance: {Balance}, FullName: {FullName}", usercode, balance, fullName);
+                return Ok(new
+                {
+                    Exists = true,
+                    UserCode = usercode,
+                    FullName = fullName,
+                    Balance = balance
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kullanıcı kontrol edilirken bir hata oluştu: {UserCode}", usercode);
+                return StatusCode(500, new { Exists = false, Message = "Bir hata oluştu. Lütfen daha sonra tekrar deneyin." });
+            }
+        }
     }
 }

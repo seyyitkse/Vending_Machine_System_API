@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -36,7 +37,12 @@ namespace Vending.ApiLayer.Controllers
 
         private async Task<string> CreateTokenAsync(LoginAppUserDto loginUser)
         {
-            AppUser user = _userManager.Users.FirstOrDefault(x => x.Email == loginUser.Email);
+            AppUser user = await _userManager.Users.FirstOrDefaultAsync(x => x.Email == loginUser.Email);
+            if (user == null)
+            {
+                _logger.LogWarning("Kullanıcı bulunamadı: {Email}", loginUser.Email);
+                throw new ArgumentNullException(nameof(user), "Kullanıcı bulunamadı.");
+            }
             var roles = await _userManager.GetRolesAsync(user);
 
             string name = $"{user.FirstName} {user.LastName}";
@@ -48,8 +54,9 @@ namespace Vending.ApiLayer.Controllers
 
             if (departmanId.HasValue)
             {
-                department = _context.Departments.FirstOrDefault(x => x.DepartmentID == departmanId.Value);
+                department = await _context.Departments.FirstOrDefaultAsync(x => x.DepartmentID == departmanId.Value);
             }
+
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["AuthSettings:Token"]));
 
@@ -60,7 +67,8 @@ namespace Vending.ApiLayer.Controllers
                 new Claim("Name", name),
                 new Claim("Department", department?.Name ?? "No Department"), // Null ise "No Department" atanır
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("UserID", userID.ToString())
+                new Claim("UserID", userID.ToString()),
+                new Claim("IsAdmin", user.IsAdmin.ToString())
             };
 
             foreach (var role in roles)
@@ -72,7 +80,7 @@ namespace Vending.ApiLayer.Controllers
                 issuer: _configuration["AuthSettings:Issuer"],
                 audience: _configuration["AuthSettings:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(10),
+                expires: DateTime.Now.AddHours(1),
                 notBefore: DateTime.Now,
                 signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
             );
@@ -85,87 +93,189 @@ namespace Vending.ApiLayer.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+        [HttpPost("VerifyToken")]
+        [AllowAnonymous]
+        public IActionResult VerifyToken([FromBody] string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest(new { message = "Token is required." });
+            }
 
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                }, out SecurityToken validatedToken);
+
+                return Ok(new { message = "Token is valid." });
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new { message = "Token is invalid or expired.", error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while validating the token.", error = ex.Message });
+            }
+        }
+
+        //[HttpGet("GetUserLoginHistory/{userId}")]
+        //public async Task<IActionResult> GetUserLoginHistory(string userId)
+        //{
+        //    var loginHistory = await _context.UserLoginHistory
+        //        .Where(x => x.UserId == userId)
+        //        .OrderByDescending(x => x.LoginTime)
+        //        .ToListAsync();
+        //    if (loginHistory == null || !loginHistory.Any())
+        //    {
+        //        return NotFound("No login history found for this user.");
+        //    }
+        //    return Ok(loginHistory);
+        //}
         [HttpPost("RegisterCustomer")]
         public async Task<IActionResult> RegisterCustomerAsync([FromBody] CreateAppUserDto model)
         {
             if (ModelState.IsValid)
             {
-                // Find the department by name
+                model.DepartmentName = "Customer";
                 var department = await _context.Departments.FirstOrDefaultAsync(d => d.Name == model.DepartmentName);
                 if (department == null)
                 {
-                    using (LogContext.PushProperty("LogType", "REGISTERCUSTOMER-FAIL"))
-                    {
-                        _logger.LogWarning("Departman bulunamadı: {DepartmentName}", model.DepartmentName);
-                    }
+                    _logger.LogWarning("Departman bulunamadı: {DepartmentName}", model.DepartmentName);
                     return BadRequest("Departman bulunamadı.");
                 }
 
-                model.DepartmentID = department.DepartmentID; // Set the department ID
+                model.DepartmentID = department.DepartmentID;
 
                 var result = await _applicationUserService.RegisterUserAsync(model);
                 if (result.IsSuccess)
                 {
                     var user = await _userManager.FindByEmailAsync(model.Mail);
-                    await _userManager.AddToRoleAsync(user, "Customer");
-                    using (LogContext.PushProperty("LogType", "REGISTERCUSTOMER"))
+
+                    // User eklendikten sonra UserCode ata
+                    user.UserCode = GenerateUniqueUserCode(user.Id);
+                    var updateResult = await _userManager.UpdateAsync(user);
+
+                    if (!updateResult.Succeeded)
                     {
-                        _logger.LogInformation("Yeni kullanıcı kaydedildi: {Email}", model.Mail);
+                        _logger.LogError("UserCode atanamadı: {Email}", model.Mail);
+                        return BadRequest("UserCode atanamadı.");
                     }
+
+                    await _userManager.AddToRoleAsync(user, "Customer");
+                    _logger.LogInformation("Yeni kullanıcı kaydedildi: {Email}, {UserCode}", model.Mail, user.UserCode);
                     return Ok(result);
                 }
 
-                using (LogContext.PushProperty("LogType", "REGISTERCUSTOMER-FAIL"))
-                {
-                    _logger.LogWarning("Kullanıcı {Email} kaydı başarısız.", model.Mail);
-                }
+                _logger.LogWarning("Kullanıcı {Email} kaydı başarısız.", model.Mail);
                 return BadRequest(result);
             }
             return BadRequest("Bazı değerler girilmedi!");
         }
-
 
         [HttpPost("RegisterAdmin")]
         public async Task<IActionResult> RegisterAdminAsync([FromBody] CreateAppUserDto model)
         {
+            model.DepartmentName = "Admin";
+            model.IsAdmin = true;
+
             if (ModelState.IsValid)
             {
-                // Find the department by name
                 var department = await _context.Departments.FirstOrDefaultAsync(d => d.Name == model.DepartmentName);
                 if (department == null)
                 {
-                    using (LogContext.PushProperty("LogType", "REGISTERADMIN-FAIL"))
-                    {
-                        _logger.LogWarning("Departman bulunamadı: {DepartmentName}", model.DepartmentName);
-                    }
+                    _logger.LogWarning("Departman bulunamadı: {DepartmentName}", model.DepartmentName);
                     return BadRequest("Departman bulunamadı.");
                 }
 
-                model.DepartmentID = department.DepartmentID; // Set the department ID
+                model.DepartmentID = department.DepartmentID;
 
                 var result = await _applicationUserService.RegisterUserAsync(model);
                 if (result.IsSuccess)
                 {
                     var user = await _userManager.FindByEmailAsync(model.Mail);
-                    await _userManager.AddToRoleAsync(user, "Admin");
-                    using (LogContext.PushProperty("LogType", "REGISTERADMIN"))
+
+                    // User eklendikten sonra UserCode ata
+                    user.UserCode = GenerateUniqueUserCode(user.Id);
+                    var updateResult = await _userManager.UpdateAsync(user);
+
+                    if (!updateResult.Succeeded)
                     {
-                        _logger.LogInformation("Yeni admin {Email} kaydedildi.", model.Mail);
+                        _logger.LogError("UserCode atanamadı: {Email}", model.Mail);
+                        return BadRequest("UserCode atanamadı.");
                     }
+
+                    await _userManager.AddToRoleAsync(user, "Admin");
+                    _logger.LogInformation("Yeni admin kaydedildi: {Email}, {UserCode}", model.Mail, user.UserCode);
                     return Ok(result);
                 }
 
-                using (LogContext.PushProperty("LogType", "REGISTERADMIN-FAIL"))
-                {
-                    _logger.LogWarning("Admin {Email} kaydı başarısız.", model.Mail);
-                }
+                _logger.LogWarning("Admin {Email} kaydı başarısız.", model.Mail);
                 return BadRequest(result);
             }
             return BadRequest("Bazı değerler girilmedi!");
         }
 
 
+        //private long GenerateUniqueUserCode(int userId)
+        //{
+        //    var datePart = DateTime.Now.ToString("yyMMdd"); // Tarih formatı: yyMMdd
+        //    var random = new Random();
+        //    int randomPart = random.Next(10, 99); // 2 haneli rastgele sayı
+        //    var userIdPart = userId.ToString().PadLeft(1, '0'); // Kullanıcı ID'sini sıfır dolgu ile 1 karaktere düzenle
+
+        //    return long.Parse($"{datePart}{randomPart}{userIdPart}");
+        //}
+        private int GenerateUniqueUserCode(int userId)
+        {
+            var random = new Random();
+            int userCode;
+
+            do
+            {
+                int randomPart = random.Next(10, 99); // 2 haneli rastgele sayı (10-99)
+                int userIdPart = userId % 1000; // Kullanıcı ID'sinin son 3 hanesi
+
+                userCode = (randomPart * 1000) + userIdPart; // 5 haneli kombinasyon oluştur
+            } while (_context.Users.Any(u => u.UserCode == userCode)); // Benzersiz olmasını sağla
+
+            return userCode;
+        }
+
+
+
+
+        //private long GenerateUniqueUserCode(int userId)
+        //{
+        //    var datePart = DateTime.Now.ToString("yyMMdd"); // Tarih formatı: yyMMdd
+        //    var random = new Random();
+        //    int randomPart = random.Next(100, 999); // 3 haneli rastgele sayı
+        //    var userIdPart = userId.ToString().PadLeft(2, '0'); // Kullanıcı ID'sini sıfır dolgu ile düzenle
+
+        //    return long.Parse($"{datePart}{randomPart}{userIdPart}");
+        //}
+
+        //private string GenerateUniqueUserCode()
+        //{
+        //    var random = new Random();
+        //    int uniqueNumber = random.Next(100000000, 999999999); // 9 haneli sayı
+
+        //    // Kontrol: Veri tabanında aynı UserCode var mı?
+        //    while (_context.Users.Any(u => u.UserCode == uniqueNumber.ToString()))
+        //    {
+        //        uniqueNumber = random.Next(100000000, 999999999);
+        //    }
+
+        //    return uniqueNumber.ToString();
+        //}
 
         [HttpPost("Login")]
         public async Task<IActionResult> LoginAsync([FromBody] LoginAppUserDto model)
