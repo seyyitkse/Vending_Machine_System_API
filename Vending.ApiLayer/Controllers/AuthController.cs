@@ -95,8 +95,10 @@ namespace Vending.ApiLayer.Controllers
         }
         [HttpPost("VerifyToken")]
         [AllowAnonymous]
-        public IActionResult VerifyToken([FromBody] string token)
+        public IActionResult VerifyToken()
         {
+            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
             if (string.IsNullOrEmpty(token))
             {
                 return BadRequest(new { message = "Token is required." });
@@ -105,7 +107,7 @@ namespace Vending.ApiLayer.Controllers
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
+                var key = Encoding.ASCII.GetBytes(_configuration["AuthSettings:Token"]);
                 tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
@@ -126,6 +128,7 @@ namespace Vending.ApiLayer.Controllers
                 return StatusCode(500, new { message = "An error occurred while validating the token.", error = ex.Message });
             }
         }
+
 
         //[HttpGet("GetUserLoginHistory/{userId}")]
         //public async Task<IActionResult> GetUserLoginHistory(string userId)
