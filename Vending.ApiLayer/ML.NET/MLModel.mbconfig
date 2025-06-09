@@ -1,4 +1,305 @@
 ﻿{
+  "Scenario": "Recommendation",
+  "DataSource": {
+    "Version": 3,
+    "EscapeCharacter": "\"",
+    "ReadMultiLines": false,
+    "KeepDiacritics": false,
+    "KeepPunctuations": false,
+    "AllowQuoting": false,
+    "Type": "TabularFile",
+    "FilePath": "C:\\SQLData1\\orders.csv",
+    "Delimiter": ";",
+    "DecimalMarker": ".",
+    "HasHeader": true,
+    "ColumnProperties": [
+      {
+        "ColumnName": "OrderId",
+        "ColumnPurpose": "Ignore",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "ProductId",
+        "ColumnPurpose": "Item",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "Quantity",
+        "ColumnPurpose": "Ignore",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "VendId",
+        "ColumnPurpose": "Ignore",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "UserCode",
+        "ColumnPurpose": "User",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "OrderDate",
+        "ColumnPurpose": "Ignore",
+        "ColumnDataFormat": "String",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "TotalPrice",
+        "ColumnPurpose": "Label",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "IsInvoiceSent",
+        "ColumnPurpose": "Ignore",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      }
+    ]
+  },
+  "Environment": {
+    "Type": "LocalCPU",
+    "Version": 1
+  },
+  "RunHistory": {
+    "Version": 3,
+    "Type": "Result",
+    "Trials": [
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "MatrixFactorization",
+        "Score": -13.7117037634079,
+        "RuntimeInSeconds": 2.231,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e3 * e4",
+          "e0": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e1": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e2": {
+            "LabelColumnName": "TotalPrice",
+            "MatrixColumnIndexColumnName": "UserCode",
+            "MatrixRowIndexColumnName": "ProductId",
+            "ApproximationRank": 10,
+            "LearningRate": 0.095765168586784133,
+            "NumberOfIterations": 210,
+            "Quiet": true
+          },
+          "e3": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode"
+          },
+          "e4": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId"
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "MatrixFactorization",
+        "Score": -13.720450137397529,
+        "RuntimeInSeconds": 2.193,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e3 * e4",
+          "e0": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e1": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e2": {
+            "LabelColumnName": "TotalPrice",
+            "MatrixColumnIndexColumnName": "UserCode",
+            "MatrixRowIndexColumnName": "ProductId",
+            "ApproximationRank": 10,
+            "LearningRate": 0.095739021613244227,
+            "NumberOfIterations": 211,
+            "Quiet": true
+          },
+          "e3": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode"
+          },
+          "e4": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId"
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "MatrixFactorization",
+        "Score": -13.742769843844329,
+        "RuntimeInSeconds": 2.291,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e3 * e4",
+          "e0": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e1": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e2": {
+            "LabelColumnName": "TotalPrice",
+            "MatrixColumnIndexColumnName": "UserCode",
+            "MatrixRowIndexColumnName": "ProductId",
+            "ApproximationRank": 10,
+            "LearningRate": 0.098990251556769784,
+            "NumberOfIterations": 222,
+            "Quiet": true
+          },
+          "e3": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode"
+          },
+          "e4": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId"
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "MatrixFactorization",
+        "Score": -13.778044330753493,
+        "RuntimeInSeconds": 2.069,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e3 * e4",
+          "e0": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e1": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e2": {
+            "LabelColumnName": "TotalPrice",
+            "MatrixColumnIndexColumnName": "UserCode",
+            "MatrixRowIndexColumnName": "ProductId",
+            "ApproximationRank": 10,
+            "LearningRate": 0.095473909169917992,
+            "NumberOfIterations": 210,
+            "Quiet": true
+          },
+          "e3": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode"
+          },
+          "e4": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId"
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "MatrixFactorization",
+        "Score": -13.806244082074489,
+        "RuntimeInSeconds": 2.064,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e3 * e4",
+          "e0": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e1": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode",
+            "AddKeyValueAnnotationsAsText": false
+          },
+          "e2": {
+            "LabelColumnName": "TotalPrice",
+            "MatrixColumnIndexColumnName": "UserCode",
+            "MatrixRowIndexColumnName": "ProductId",
+            "ApproximationRank": 10,
+            "LearningRate": 0.096004870222170219,
+            "NumberOfIterations": 211,
+            "Quiet": true
+          },
+          "e3": {
+            "OutputColumnName": "UserCode",
+            "InputColumnName": "UserCode"
+          },
+          "e4": {
+            "OutputColumnName": "ProductId",
+            "InputColumnName": "ProductId"
+          }
+        }
+      }
+    ],
+    "Estimators": {
+      "e0": "MapValueToKey",
+      "e1": "MapValueToKey",
+      "e2": "MatrixFactorization",
+      "e3": "MapKeyToValue",
+      "e4": "MapKeyToValue"
+    },
+    "Schema": "e0 * e1 * e2 * e3 * e4",
+    "MetricName": "RSquared",
+    "ModelFilePath": "C:\\Users\\ahmet\\source\\repos\\seyyitkse\\Vending_Machine_System_API\\Vending.ApiLayer\\ML.NET\\MLModel.mlnet"
+  },
   "Type": "TrainingConfig",
-  "Version": 2
+  "Version": 5,
+  "TrainingOption": {
+    "Version": 2,
+    "Subsampling": false,
+    "Tuner": "eci-cfo",
+    "Type": "RecommendationTrainingOption",
+    "TrainingTime": 180,
+    "OptimizeMetric": "RSquared",
+    "LabelColumn": "TotalPrice",
+    "UserIdColumn": "UserCode",
+    "ItemIdColumn": "ProductId",
+    "ValidationOption": {
+      "Version": 0,
+      "Type": "CrossValidationValidationOption",
+      "NumberOfFolds": 5
+    }
+  }
 }
