@@ -15,17 +15,37 @@ namespace MLModel_WebApi
         #region model input class
         public class ModelInput
         {
+            [LoadColumn(0)]
+            [ColumnName(@"OrderId")]
+            public float OrderId { get; set; }
+
             [LoadColumn(1)]
             [ColumnName(@"ProductId")]
             public float ProductId { get; set; }
+
+            [LoadColumn(2)]
+            [ColumnName(@"Quantity")]
+            public float Quantity { get; set; }
+
+            [LoadColumn(3)]
+            [ColumnName(@"VendId")]
+            public float VendId { get; set; }
 
             [LoadColumn(4)]
             [ColumnName(@"UserCode")]
             public float UserCode { get; set; }
 
+            [LoadColumn(5)]
+            [ColumnName(@"OrderDate")]
+            public string OrderDate { get; set; }
+
             [LoadColumn(6)]
             [ColumnName(@"TotalPrice")]
             public float TotalPrice { get; set; }
+
+            [LoadColumn(7)]
+            [ColumnName(@"IsInvoiceSent")]
+            public float IsInvoiceSent { get; set; }
 
         }
 
@@ -37,14 +57,32 @@ namespace MLModel_WebApi
         #region model output class
         public class ModelOutput
         {
+            [ColumnName(@"OrderId")]
+            public float OrderId { get; set; }
+
             [ColumnName(@"ProductId")]
             public float ProductId { get; set; }
+
+            [ColumnName(@"Quantity")]
+            public float Quantity { get; set; }
+
+            [ColumnName(@"VendId")]
+            public float VendId { get; set; }
 
             [ColumnName(@"UserCode")]
             public float UserCode { get; set; }
 
+            [ColumnName(@"OrderDate")]
+            public float[] OrderDate { get; set; }
+
             [ColumnName(@"TotalPrice")]
             public float TotalPrice { get; set; }
+
+            [ColumnName(@"IsInvoiceSent")]
+            public float IsInvoiceSent { get; set; }
+
+            [ColumnName(@"Features")]
+            public float[] Features { get; set; }
 
             [ColumnName(@"Score")]
             public float Score { get; set; }

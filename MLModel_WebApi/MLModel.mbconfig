@@ -1,15 +1,452 @@
 ﻿{
   "Scenario": "Regression",
+  "DataSource": {
+    "Version": 3,
+    "EscapeCharacter": "\"",
+    "ReadMultiLines": false,
+    "KeepDiacritics": false,
+    "KeepPunctuations": false,
+    "AllowQuoting": false,
+    "Type": "TabularFile",
+    "FilePath": "E:\\Bilgisayar Muh 4.Sinif\\Bitirme Projesi\\orders.csv",
+    "Delimiter": ";",
+    "DecimalMarker": ".",
+    "HasHeader": true,
+    "ColumnProperties": [
+      {
+        "ColumnName": "OrderId",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "ProductId",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "Quantity",
+        "ColumnPurpose": "Label",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "VendId",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "UserCode",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "OrderDate",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "String",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "TotalPrice",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": false,
+        "Type": "Column",
+        "Version": 5
+      },
+      {
+        "ColumnName": "IsInvoiceSent",
+        "ColumnPurpose": "Feature",
+        "ColumnDataFormat": "Single",
+        "IsCategorical": true,
+        "Type": "Column",
+        "Version": 5
+      }
+    ]
+  },
   "Environment": {
     "Type": "LocalCPU",
     "Version": 1
+  },
+  "RunHistory": {
+    "Version": 3,
+    "Type": "Result",
+    "Trials": [
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": 0.03643216561449205,
+        "RuntimeInSeconds": 1.541,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e4",
+          "e0": {
+            "OutputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ],
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ]
+          },
+          "e1": {
+            "InputColumnName": "OrderDate",
+            "OutputColumnName": "OrderDate"
+          },
+          "e2": {
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent",
+              "OrderDate"
+            ],
+            "OutputColumnName": "Features"
+          },
+          "e3": {
+            "NumberOfLeaves": 260,
+            "MinimumExampleCountPerLeaf": 7,
+            "NumberOfTrees": 290,
+            "MaximumBinCountPerFeature": 745,
+            "FeatureFraction": 0.61656800776303011,
+            "LearningRate": 0.0031064294286999249,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          },
+          "e4": {
+            "NumberOfLeaves": 71,
+            "MinimumExampleCountPerLeaf": 120,
+            "NumberOfTrees": 304,
+            "MaximumBinCountPerFeature": 35,
+            "FeatureFraction": 0.53649520259202876,
+            "LearningRate": 0.00029459503091250843,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -0.110522210562412,
+        "RuntimeInSeconds": 5.297,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e4",
+          "e0": {
+            "OutputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ],
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ]
+          },
+          "e1": {
+            "InputColumnName": "OrderDate",
+            "OutputColumnName": "OrderDate"
+          },
+          "e2": {
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent",
+              "OrderDate"
+            ],
+            "OutputColumnName": "Features"
+          },
+          "e3": {
+            "NumberOfLeaves": 12635,
+            "MinimumExampleCountPerLeaf": 40,
+            "NumberOfTrees": 9,
+            "MaximumBinCountPerFeature": 13,
+            "FeatureFraction": 0.80541136767789046,
+            "LearningRate": 1.988966491795388E-09,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          },
+          "e4": {
+            "NumberOfLeaves": 87,
+            "MinimumExampleCountPerLeaf": 6,
+            "NumberOfTrees": 96,
+            "MaximumBinCountPerFeature": 16,
+            "FeatureFraction": 0.44022040299852877,
+            "LearningRate": 0.00032749712312542478,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -0.12904725158236735,
+        "RuntimeInSeconds": 1.882,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e4",
+          "e0": {
+            "OutputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ],
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ]
+          },
+          "e1": {
+            "InputColumnName": "OrderDate",
+            "OutputColumnName": "OrderDate"
+          },
+          "e2": {
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent",
+              "OrderDate"
+            ],
+            "OutputColumnName": "Features"
+          },
+          "e3": {
+            "NumberOfLeaves": 9799,
+            "MinimumExampleCountPerLeaf": 18,
+            "NumberOfTrees": 8,
+            "MaximumBinCountPerFeature": 537,
+            "FeatureFraction": 0.4056615687957128,
+            "LearningRate": 9.3165003903342253E-08,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          },
+          "e4": {
+            "NumberOfLeaves": 171,
+            "MinimumExampleCountPerLeaf": 4,
+            "NumberOfTrees": 9,
+            "MaximumBinCountPerFeature": 20,
+            "FeatureFraction": 0.37770793204484454,
+            "LearningRate": 0.0014656573882238406,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "FastTreeTweedieRegression",
+        "Score": -0.13757184329536859,
+        "RuntimeInSeconds": 217.331,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e4",
+          "e0": {
+            "OutputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ],
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ]
+          },
+          "e1": {
+            "InputColumnName": "OrderDate",
+            "OutputColumnName": "OrderDate"
+          },
+          "e2": {
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent",
+              "OrderDate"
+            ],
+            "OutputColumnName": "Features"
+          },
+          "e3": {
+            "NumberOfLeaves": 890,
+            "MinimumExampleCountPerLeaf": 3,
+            "NumberOfTrees": 74,
+            "MaximumBinCountPerFeature": 673,
+            "FeatureFraction": 0.68401984586645792,
+            "LearningRate": 0.017224958860060074,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          },
+          "e4": {
+            "NumberOfLeaves": 1025,
+            "MinimumExampleCountPerLeaf": 2,
+            "NumberOfTrees": 1672,
+            "MaximumBinCountPerFeature": 66,
+            "FeatureFraction": 0.42614923543131317,
+            "LearningRate": 2.1789311652834639E-10,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          }
+        }
+      },
+      {
+        "Version": 1,
+        "Type": "Trial",
+        "TrainerName": "FastTreeRegression",
+        "Score": -1.4219835416122826,
+        "RuntimeInSeconds": 25.473,
+        "Parameter": {
+          "_SCHEMA_": "e0 * e1 * e2 * e3",
+          "e0": {
+            "OutputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ],
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent"
+            ]
+          },
+          "e1": {
+            "InputColumnName": "OrderDate",
+            "OutputColumnName": "OrderDate"
+          },
+          "e2": {
+            "InputColumnNames": [
+              "OrderId",
+              "ProductId",
+              "VendId",
+              "UserCode",
+              "TotalPrice",
+              "IsInvoiceSent",
+              "OrderDate"
+            ],
+            "OutputColumnName": "Features"
+          },
+          "e3": {
+            "NumberOfLeaves": 4017,
+            "MinimumExampleCountPerLeaf": 97,
+            "NumberOfTrees": 3042,
+            "MaximumBinCountPerFeature": 41,
+            "FeatureFraction": 0.31009247298917,
+            "LearningRate": 3.5892875956765231E-08,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          },
+          "e4": {
+            "NumberOfLeaves": 41,
+            "MinimumExampleCountPerLeaf": 91,
+            "NumberOfTrees": 5682,
+            "MaximumBinCountPerFeature": 9,
+            "FeatureFraction": 0.011492270590683496,
+            "LearningRate": 1.5702819915098553E-05,
+            "LabelColumnName": "Quantity",
+            "FeatureColumnName": "Features",
+            "DiskTranspose": true
+          }
+        }
+      }
+    ],
+    "Estimators": {
+      "e0": "ReplaceMissingValues",
+      "e1": "FeaturizeText",
+      "e2": "Concatenate",
+      "e3": "FastTreeRegression",
+      "e4": "FastTreeTweedieRegression"
+    },
+    "Schema": "e0 * e1 * e2 * (e3 + e4)",
+    "MetricName": "RSquared",
+    "ModelFilePath": "C:\\Users\\ahmet\\source\\repos\\seyyitkse\\Vending_Machine_System_API\\MLModel_WebApi\\MLModel.mlnet"
   },
   "Type": "TrainingConfig",
   "Version": 5,
   "TrainingOption": {
     "Version": 2,
-    "Subsampling": false,
+    "MaximumMemoryToUseInMB": 6000,
+    "Subsampling": true,
+    "Tuner": "smac",
     "Type": "RegressionTrainingOption",
-    "TrainingTime": 0
+    "TrainingTime": 360,
+    "OptimizeMetric": "RSquared",
+    "LabelColumn": "Quantity",
+    "AvailableTrainers": [
+      "FASTTREE-DISKTRANSPOSE"
+    ],
+    "ValidationOption": {
+      "Version": 0,
+      "Type": "CrossValidationValidationOption",
+      "NumberOfFolds": 5
+    }
   }
 }

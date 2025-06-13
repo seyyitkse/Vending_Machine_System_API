@@ -8,12 +8,13 @@ using System.Threading.Tasks;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Microsoft.ML.Trainers;
+using Microsoft.ML.Trainers.FastTree;
 
 namespace MLModel_WebApi
 {
     public partial class MLModel
     {
-        public const string RetrainFilePath =  @"C:\SQLData1\orders.csv";
+        public const string RetrainFilePath =  @"E:\Bilgisayar Muh 4.Sinif\Bitirme Projesi\orders.csv";
         public const char RetrainSeparatorChar = ';';
         public const bool RetrainHasHeader =  true;
         public const bool RetrainAllowQuoting =  false;
@@ -89,11 +90,10 @@ namespace MLModel_WebApi
         public static IEstimator<ITransformer> BuildPipeline(MLContext mlContext)
         {
             // Data process configuration with pipeline data transformations
-            var pipeline = mlContext.Transforms.Conversion.MapValueToKey(outputColumnName:@"ProductId",inputColumnName:@"ProductId",addKeyValueAnnotationsAsText:false)      
-                                    .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName:@"UserCode",inputColumnName:@"UserCode",addKeyValueAnnotationsAsText:false))      
-                                    .Append(mlContext.Recommendation().Trainers.MatrixFactorization(new MatrixFactorizationTrainer.Options(){LabelColumnName=@"TotalPrice",MatrixColumnIndexColumnName=@"UserCode",MatrixRowIndexColumnName=@"ProductId",ApproximationRank=32,LearningRate=0.03916636916021216,NumberOfIterations=281,Quiet=true}))      
-                                    .Append(mlContext.Transforms.Conversion.MapKeyToValue(outputColumnName:@"UserCode",inputColumnName:@"UserCode"))      
-                                    .Append(mlContext.Transforms.Conversion.MapKeyToValue(outputColumnName:@"ProductId",inputColumnName:@"ProductId"));
+            var pipeline = mlContext.Transforms.ReplaceMissingValues(new []{new InputOutputColumnPair(@"OrderId", @"OrderId"),new InputOutputColumnPair(@"ProductId", @"ProductId"),new InputOutputColumnPair(@"VendId", @"VendId"),new InputOutputColumnPair(@"UserCode", @"UserCode"),new InputOutputColumnPair(@"TotalPrice", @"TotalPrice"),new InputOutputColumnPair(@"IsInvoiceSent", @"IsInvoiceSent")})      
+                                    .Append(mlContext.Transforms.Text.FeaturizeText(inputColumnName:@"OrderDate",outputColumnName:@"OrderDate"))      
+                                    .Append(mlContext.Transforms.Concatenate(@"Features", new []{@"OrderId",@"ProductId",@"VendId",@"UserCode",@"TotalPrice",@"IsInvoiceSent",@"OrderDate"}))      
+                                    .Append(mlContext.Regression.Trainers.FastTreeTweedie(new FastTreeTweedieTrainer.Options(){NumberOfLeaves=71,MinimumExampleCountPerLeaf=120,NumberOfTrees=304,MaximumBinCountPerFeature=35,FeatureFraction=0.5364952025920288,LearningRate=0.00029459503091250843,LabelColumnName=@"Quantity",FeatureColumnName=@"Features",DiskTranspose=true}));
 
             return pipeline;
         }
